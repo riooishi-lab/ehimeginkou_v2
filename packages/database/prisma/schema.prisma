@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["sub"]
 }
 
 // ============================================
@@ -56,6 +57,7 @@ model User {
   @@index([isActive])
   @@index([deletedAt])
   @@map("users")
+  @@schema("sub")
 }
 
 enum UserRole {
@@ -64,6 +66,8 @@ enum UserRole {
   MANAGER
   SALES_REP
   VIEWER
+
+  @@schema("sub")
 }
 
 // ============================================
@@ -100,6 +104,7 @@ model Invitation {
   @@index([invitedById])
   @@index([expiresAt])
   @@map("invitations")
+  @@schema("sub")
 }
 
 enum InvitationStatus {
@@ -107,6 +112,8 @@ enum InvitationStatus {
   ACCEPTED
   EXPIRED
   REVOKED
+
+  @@schema("sub")
 }
 
 // ============================================
@@ -128,6 +135,7 @@ model Team {
   @@index([publicId])
   @@index([deletedAt])
   @@map("teams")
+  @@schema("sub")
 }
 
 model TeamMember {
@@ -148,6 +156,147 @@ model TeamMember {
   @@index([userId])
   @@index([deletedAt])
   @@map("team_members")
+  @@schema("sub")
+}
+
+// ============================================
+// Recruitment Video Management
+// ============================================
+
+model Video {
+  id       Int    @id @default(autoincrement()) @map("id")
+  publicId String @unique @default(cuid()) @map("public_id")
+
+  title        String  @map("title")
+  description  String? @map("description")
+  category     VideoCategory @map("category")
+  subcategory  String? @map("subcategory")
+  durationSec  Int?    @map("duration_sec")
+  videoUrl     String  @map("video_url")
+  thumbnailUrl String? @map("thumbnail_url")
+  isPublished  Boolean @default(false) @map("is_published")
+  isPinned     Boolean @default(false) @map("is_pinned")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  watchEvents WatchEvent[]
+
+  @@index([publicId])
+  @@index([category])
+  @@index([isPublished])
+  @@index([deletedAt])
+  @@map("videos")
+  @@schema("sub")
+}
+
+enum VideoCategory {
+  GOAL_APPEAL
+  PEOPLE_APPEAL
+  ACTIVITY_APPEAL
+  CONDITION_APPEAL
+  BRIEFING
+
+  @@schema("sub")
+}
+
+model Student {
+  id       Int    @id @default(autoincrement()) @map("id")
+  publicId String @unique @default(cuid()) @map("public_id")
+
+  atsId      String? @map("ats_id")
+  name       String  @map("name")
+  email      String  @unique @map("email")
+  phone      String? @map("phone")
+  university String? @map("university")
+  department String? @map("department")
+
+  token          String    @unique @map("token")
+  tokenExpiresAt DateTime  @map("token_expires_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  watchEvents  WatchEvent[]
+  studentMemos StudentMemo[]
+
+  @@index([publicId])
+  @@index([email])
+  @@index([token])
+  @@index([atsId])
+  @@index([deletedAt])
+  @@map("students")
+  @@schema("sub")
+}
+
+model WatchEvent {
+  id Int @id @default(autoincrement()) @map("id")
+
+  studentId Int     @map("student_id")
+  student   Student @relation(fields: [studentId], references: [id])
+
+  videoId Int   @map("video_id")
+  video   Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  eventType   WatchEventType @map("event_type")
+  positionSec Float          @default(0) @map("position_sec")
+  sessionId   String         @map("session_id")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([studentId])
+  @@index([videoId])
+  @@index([sessionId])
+  @@index([eventType])
+  @@map("watch_events")
+  @@schema("sub")
+}
+
+enum WatchEventType {
+  PLAY
+  PAUSE
+  SEEK
+  ENDED
+  HEARTBEAT
+
+  @@schema("sub")
+}
+
+model StudentMemo {
+  id Int @id @default(autoincrement()) @map("id")
+
+  studentId   Int     @map("student_id")
+  student     Student @relation(fields: [studentId], references: [id])
+
+  authorEmail String @map("author_email")
+  content     String @map("content")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([studentId, authorEmail])
+  @@index([studentId])
+  @@map("student_memos")
+  @@schema("sub")
+}
+
+model AuditLog {
+  id Int @id @default(autoincrement()) @map("id")
+
+  actorEmail String  @map("actor_email")
+  action     String  @map("action")
+  targetType String  @map("target_type")
+  targetId   String? @map("target_id")
+  details    Json?   @map("details")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([actorEmail])
+  @@index([targetType])
+  @@map("audit_logs")
+  @@schema("sub")
 }
 
 // ============================================
@@ -175,6 +324,7 @@ view VisibleUser {
   syncedAt        DateTime? @map("synced_at") @db.Timestamptz(6)
 
   @@map("visible_users")
+  @@schema("sub")
 }
 
 view VisibleTeam {
@@ -186,6 +336,7 @@ view VisibleTeam {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@map("visible_teams")
+  @@schema("sub")
 }
 
 view VisibleTeamMember {
@@ -197,6 +348,46 @@ view VisibleTeamMember {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@map("visible_team_members")
+  @@schema("sub")
+}
+
+view VisibleVideo {
+  id           Int           @unique
+  publicId     String        @unique @map("public_id")
+  title        String
+  description  String?
+  category     VideoCategory
+  subcategory  String?
+  durationSec  Int?          @map("duration_sec")
+  videoUrl     String        @map("video_url")
+  thumbnailUrl String?       @map("thumbnail_url")
+  isPublished  Boolean       @map("is_published")
+  isPinned     Boolean       @map("is_pinned")
+  createdAt    DateTime      @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime      @map("updated_at") @db.Timestamptz(6)
+  deletedAt    DateTime?     @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("visible_videos")
+  @@schema("sub")
+}
+
+view VisibleStudent {
+  id             Int       @unique
+  publicId       String    @unique @map("public_id")
+  atsId          String?   @map("ats_id")
+  name           String
+  email          String    @unique
+  phone          String?
+  university     String?
+  department     String?
+  token          String    @unique
+  tokenExpiresAt DateTime  @map("token_expires_at") @db.Timestamptz(6)
+  createdAt      DateTime  @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("visible_students")
+  @@schema("sub")
 }
 
 view VisibleInvitation {
@@ -217,4 +408,5 @@ view VisibleInvitation {
   deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz(6)
 
   @@map("visible_invitations")
+  @@schema("sub")
 }

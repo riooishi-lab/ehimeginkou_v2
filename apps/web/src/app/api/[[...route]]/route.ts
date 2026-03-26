@@ -7,6 +7,7 @@ import { handle } from 'hono/vercel'
 import { ZodError } from 'zod'
 import type { AppEnv } from '../middleware'
 import { sample } from '../routers/sample'
+import { watchEvent } from '../routers/watchEvent'
 
 export const runtime = 'nodejs'
 
@@ -30,7 +31,8 @@ app.notFound((c) => {
   return c.json({ error: 'Not Found' }, 404)
 })
 
-const routes = app.route('/sample', sample)
+app.route('/sample', sample)
+const routes = app.route('/watch-event', watchEvent)
 
 export type AppType = typeof routes
 

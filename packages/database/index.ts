@@ -4,18 +4,27 @@
 // For the prisma instance, import from 'database/client' instead.
 
 export type {
+	AuditLog,
 	Invitation,
+	Student,
+	StudentMemo,
 	Team,
 	TeamMember,
 	User,
+	Video,
 	VisibleInvitation,
+	VisibleStudent,
 	VisibleTeam,
 	VisibleTeamMember,
 	VisibleUser,
+	VisibleVideo,
+	WatchEvent,
 } from "./generated/client/browser";
 export {
 	$Enums,
 	InvitationStatus,
 	Prisma,
 	UserRole,
+	VideoCategory,
+	WatchEventType,
 } from "./generated/client/browser";
