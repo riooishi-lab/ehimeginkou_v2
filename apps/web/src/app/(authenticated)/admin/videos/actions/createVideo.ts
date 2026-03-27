@@ -1,20 +1,30 @@
 'use server'
 
-import type { VideoCategory } from '@monorepo/database'
 import { prisma } from '@monorepo/database/client'
 import { revalidatePath } from 'next/cache'
+import { checkIsAdminOrSuperAdmin } from '../../../../../libs/auth/session'
 import { type ActionState, errorResult, successResult } from '../../utils/actionResult'
+import { isVideoCategory } from '../constants'
 
 export async function createVideo(_prevState: ActionState, formData: FormData) {
+  const currentUser = await checkIsAdminOrSuperAdmin()
+  if (!currentUser) {
+    return errorResult('この操作を実行する権限がありません')
+  }
+
   const title = formData.get('title') as string | null
   const description = formData.get('description') as string | null
-  const category = formData.get('category') as VideoCategory | null
+  const rawCategory = formData.get('category')
   const subcategory = formData.get('subcategory') as string | null
   const videoUrl = formData.get('videoUrl') as string | null
   const thumbnailUrl = formData.get('thumbnailUrl') as string | null
   const durationSec = formData.get('durationSec') as string | null
 
-  if (!title || !category || !videoUrl) {
+  if (!title || !videoUrl) {
+    return errorResult('タイトル、カテゴリ、動画URLは必須です')
+  }
+
+  if (!isVideoCategory(rawCategory)) {
     return errorResult('タイトル、カテゴリ、動画URLは必須です')
   }
 
@@ -23,11 +33,11 @@ export async function createVideo(_prevState: ActionState, formData: FormData) {
       data: {
         title,
         description: description || null,
-        category,
+        category: rawCategory,
         subcategory: subcategory || null,
         videoUrl,
         thumbnailUrl: thumbnailUrl || null,
-        durationSec: durationSec ? Number.parseInt(durationSec, 10) : null,
+        durationSec: durationSec ? (Number.isNaN(Number(durationSec)) ? null : Number.parseInt(durationSec, 10)) : null,
       },
     })
   } catch {

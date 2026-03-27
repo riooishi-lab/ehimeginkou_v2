@@ -2,8 +2,12 @@ import type { User } from '@monorepo/database'
 import { prisma } from '@monorepo/database/client'
 import { jwtDecode } from 'jwt-decode'
 import { cookies } from 'next/headers'
-import { adminAuth } from '../firebase/nodeApp'
 import { SESSION_COOKIE_NAME, SESSION_EXPIRATION_SECONDS } from './constants'
+
+async function getAdminAuth() {
+  const { adminAuth } = await import('../firebase/nodeApp')
+  return adminAuth
+}
 
 export function checkIsLocal(): boolean {
   /* biome-ignore lint/style/noProcessEnv: NODE_ENV is a standard Node.js environment variable */
@@ -24,6 +28,7 @@ export async function getSession() {
       return null
     }
 
+    const adminAuth = await getAdminAuth()
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
     return {
       uid: decodedClaims.uid,
@@ -35,6 +40,7 @@ export async function getSession() {
 }
 
 export async function createSessionCookie(idToken: string): Promise<string> {
+  const adminAuth = await getAdminAuth()
   return await adminAuth.createSessionCookie(idToken, {
     expiresIn: SESSION_EXPIRATION_SECONDS * 1000,
   })
@@ -59,6 +65,7 @@ export async function clearSessionCookie() {
 }
 
 export async function revokeUserSessions(uid: string) {
+  const adminAuth = await getAdminAuth()
   await adminAuth.revokeRefreshTokens(uid)
 }
 

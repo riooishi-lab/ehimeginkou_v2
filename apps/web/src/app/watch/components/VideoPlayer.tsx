@@ -6,7 +6,7 @@ import styles from './VideoPlayer.module.css'
 
 type Props = {
   video: VisibleVideo
-  studentId: number
+  token: string
   onClose: () => void
 }
 
@@ -19,7 +19,7 @@ function generateSessionId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export function VideoPlayer({ video, studentId, onClose }: Props) {
+export function VideoPlayer({ video, token, onClose }: Props) {
   const sessionIdRef = useRef(generateSessionId())
   const youtubeId = getYouTubeId(video.videoUrl)
 
@@ -29,7 +29,7 @@ export function VideoPlayer({ video, studentId, onClose }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          studentId,
+          token,
           videoId: video.id,
           eventType,
           positionSec,
@@ -37,7 +37,7 @@ export function VideoPlayer({ video, studentId, onClose }: Props) {
         }),
       }).catch(() => {})
     },
-    [studentId, video.id],
+    [token, video.id],
   )
 
   useEffect(() => {

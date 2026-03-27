@@ -3,12 +3,31 @@
 import { randomBytes } from 'node:crypto'
 import { prisma } from '@monorepo/database/client'
 import { revalidatePath } from 'next/cache'
+import { checkIsAdminOrSuperAdmin } from '../../../../../libs/auth/session'
 
 type ImportResult = {
   status: 'success' | 'error'
   imported: number
   skipped: number
   errors: string[]
+}
+
+type ColumnIndices = {
+  nameIdx: number
+  emailIdx: number
+  phoneIdx: number
+  universityIdx: number
+  departmentIdx: number
+  atsIdIdx: number
+}
+
+const HEADER_ALIASES: Record<keyof ColumnIndices, string[]> = {
+  nameIdx: ['name', '氏名'],
+  emailIdx: ['email', 'メール', 'メールアドレス'],
+  phoneIdx: ['phone', '電話', '電話番号'],
+  universityIdx: ['university', '大学', '大学名'],
+  departmentIdx: ['department', '学部', '学部名'],
+  atsIdIdx: ['ats_id', 'atsid'],
 }
 
 function parseCsvLine(line: string): string[] {
@@ -30,30 +49,68 @@ function parseCsvLine(line: string): string[] {
   return result
 }
 
-export async function importStudentsCsv(_prevState: ImportResult | null, formData: FormData): Promise<ImportResult> {
-  const file = formData.get('file') as File | null
+function resolveColumnIndices(headers: string[]): ColumnIndices {
+  const normalized = headers.map((h) => h.toLowerCase().replace(/\s+/g, '_'))
+  const findIdx = (aliases: string[]) => normalized.findIndex((h) => aliases.includes(h))
 
+  return {
+    nameIdx: findIdx(HEADER_ALIASES.nameIdx),
+    emailIdx: findIdx(HEADER_ALIASES.emailIdx),
+    phoneIdx: findIdx(HEADER_ALIASES.phoneIdx),
+    universityIdx: findIdx(HEADER_ALIASES.universityIdx),
+    departmentIdx: findIdx(HEADER_ALIASES.departmentIdx),
+    atsIdIdx: findIdx(HEADER_ALIASES.atsIdIdx),
+  }
+}
+
+function optionalField(fields: string[], idx: number): string | null {
+  return idx >= 0 ? fields[idx] || null : null
+}
+
+function errorImportResult(errors: string[]): ImportResult {
+  return { status: 'error', imported: 0, skipped: 0, errors }
+}
+
+async function upsertStudent(fields: string[], indices: ColumnIndices) {
+  const name = fields[indices.nameIdx]
+  const email = fields[indices.emailIdx]
+  const optionalData = {
+    phone: optionalField(fields, indices.phoneIdx),
+    university: optionalField(fields, indices.universityIdx),
+    department: optionalField(fields, indices.departmentIdx),
+    atsId: optionalField(fields, indices.atsIdIdx),
+  }
+
+  const token = randomBytes(32).toString('hex')
+  const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+  await prisma.student.upsert({
+    where: { email },
+    update: { name, ...optionalData },
+    create: { name, email, ...optionalData, token, tokenExpiresAt },
+  })
+}
+
+export async function importStudentsCsv(_prevState: ImportResult | null, formData: FormData): Promise<ImportResult> {
+  const currentUser = await checkIsAdminOrSuperAdmin()
+  if (!currentUser) {
+    return errorImportResult(['この操作を実行する権限がありません'])
+  }
+
+  const file = formData.get('file') as File | null
   if (!file) {
-    return { status: 'error', imported: 0, skipped: 0, errors: ['ファイルが選択されていません'] }
+    return errorImportResult(['ファイルが選択されていません'])
   }
 
   const text = await file.text()
   const lines = text.split(/\r?\n/).filter((line) => line.trim())
-
   if (lines.length < 2) {
-    return { status: 'error', imported: 0, skipped: 0, errors: ['CSVにデータがありません'] }
+    return errorImportResult(['CSVにデータがありません'])
   }
 
-  const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase().replace(/\s+/g, '_'))
-  const nameIdx = headers.findIndex((h) => h === 'name' || h === '氏名')
-  const emailIdx = headers.findIndex((h) => h === 'email' || h === 'メール' || h === 'メールアドレス')
-  const phoneIdx = headers.findIndex((h) => h === 'phone' || h === '電話' || h === '電話番号')
-  const universityIdx = headers.findIndex((h) => h === 'university' || h === '大学' || h === '大学名')
-  const departmentIdx = headers.findIndex((h) => h === 'department' || h === '学部' || h === '学部名')
-  const atsIdIdx = headers.findIndex((h) => h === 'ats_id' || h === 'atsid')
-
-  if (nameIdx === -1 || emailIdx === -1) {
-    return { status: 'error', imported: 0, skipped: 0, errors: ['CSVに「name/氏名」と「email/メール」列が必要です'] }
+  const indices = resolveColumnIndices(parseCsvLine(lines[0]))
+  if (indices.nameIdx === -1 || indices.emailIdx === -1) {
+    return errorImportResult(['CSVに「name/氏名」と「email/メール」列が必要です'])
   }
 
   let imported = 0
@@ -63,42 +120,19 @@ export async function importStudentsCsv(_prevState: ImportResult | null, formDat
   const dataLines = lines.slice(1)
   for (let i = 0; i < dataLines.length; i++) {
     const fields = parseCsvLine(dataLines[i])
-    const name = fields[nameIdx]
-    const email = fields[emailIdx]
+    const rowNum = i + 2
 
-    if (!name || !email) {
-      errors.push(`${i + 2}行目: 氏名またはメールが空です`)
+    if (!fields[indices.nameIdx] || !fields[indices.emailIdx]) {
+      errors.push(`${rowNum}行目: 氏名またはメールが空です`)
       skipped++
       continue
     }
 
-    const token = randomBytes(32).toString('hex')
-    const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-
     try {
-      await prisma.student.upsert({
-        where: { email },
-        update: {
-          name,
-          phone: phoneIdx >= 0 ? fields[phoneIdx] || null : null,
-          university: universityIdx >= 0 ? fields[universityIdx] || null : null,
-          department: departmentIdx >= 0 ? fields[departmentIdx] || null : null,
-          atsId: atsIdIdx >= 0 ? fields[atsIdIdx] || null : null,
-        },
-        create: {
-          name,
-          email,
-          phone: phoneIdx >= 0 ? fields[phoneIdx] || null : null,
-          university: universityIdx >= 0 ? fields[universityIdx] || null : null,
-          department: departmentIdx >= 0 ? fields[departmentIdx] || null : null,
-          atsId: atsIdIdx >= 0 ? fields[atsIdIdx] || null : null,
-          token,
-          tokenExpiresAt,
-        },
-      })
+      await upsertStudent(fields, indices)
       imported++
     } catch {
-      errors.push(`${i + 2}行目: ${email}の登録に失敗しました`)
+      errors.push(`${rowNum}行目: ${fields[indices.emailIdx]}の登録に失敗しました`)
       skipped++
     }
   }
