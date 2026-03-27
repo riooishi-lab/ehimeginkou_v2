@@ -100,3 +100,49 @@ export async function cleanupTestTeam(teamId: number) {
     await pool.query('UPDATE teams SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL', [teamId])
   })
 }
+
+type CreateTestStudentParams = {
+  name: string
+  email: string
+  token: string
+  expired?: boolean
+}
+
+export async function createTestStudent({ name, email, token, expired }: CreateTestStudentParams): Promise<number> {
+  const interval = expired ? "NOW() - INTERVAL '1 day'" : "NOW() + INTERVAL '30 days'"
+  return runQuery(async (pool) => {
+    const result = await pool.query(
+      `INSERT INTO students (public_id, name, email, token, token_expires_at, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, ${interval}, NOW(), NOW())
+       RETURNING id`,
+      [randomUUID(), name, email, token],
+    )
+    return result.rows[0].id
+  })
+}
+
+export async function createTestVideo(title: string): Promise<number> {
+  return runQuery(async (pool) => {
+    const result = await pool.query(
+      `INSERT INTO videos (public_id, title, category, video_url, is_published, created_at, updated_at)
+       VALUES ($1, $2, 'GOAL_APPEAL', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', true, NOW(), NOW())
+       RETURNING id`,
+      [randomUUID(), title],
+    )
+    return result.rows[0].id
+  })
+}
+
+export async function cleanupTestStudent(studentId: number) {
+  return runQuery(async (pool) => {
+    await pool.query('DELETE FROM watch_events WHERE student_id = $1', [studentId])
+    await pool.query('UPDATE students SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL', [studentId])
+  })
+}
+
+export async function cleanupTestVideo(videoId: number) {
+  return runQuery(async (pool) => {
+    await pool.query('DELETE FROM watch_events WHERE video_id = $1', [videoId])
+    await pool.query('UPDATE videos SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL', [videoId])
+  })
+}
