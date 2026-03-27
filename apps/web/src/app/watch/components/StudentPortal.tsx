@@ -1,30 +1,29 @@
 'use client'
 
-import type { VisibleStudent, VisibleVideo } from '@monorepo/database'
+import type { VisibleVideo } from '@monorepo/database'
 import { useState } from 'react'
 import styles from './StudentPortal.module.css'
 import { VideoCard } from './VideoCard'
 import { VideoPlayer } from './VideoPlayer'
 
 type Props = {
-  student: VisibleStudent
+  studentName: string
+  token: string
   videos: VisibleVideo[]
   watchedVideoIds: number[]
 }
 
-export function StudentPortal({ student, videos, watchedVideoIds }: Props) {
+export function StudentPortal({ studentName, token, videos, watchedVideoIds }: Props) {
   const [selectedVideo, setSelectedVideo] = useState<VisibleVideo | null>(null)
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1 className={styles.title}>{student.name}様へのコンテンツ</h1>
+        <h1 className={styles.title}>{studentName}様へのコンテンツ</h1>
         <p className={styles.subtitle}>採用に関する動画をご覧いただけます</p>
       </header>
 
-      {selectedVideo && (
-        <VideoPlayer video={selectedVideo} studentId={student.id} onClose={() => setSelectedVideo(null)} />
-      )}
+      {selectedVideo && <VideoPlayer video={selectedVideo} token={token} onClose={() => setSelectedVideo(null)} />}
 
       <main className={styles.main}>
         <div className={styles.grid}>

@@ -15,3 +15,7 @@ export const VIDEO_CATEGORIES: VideoCategory[] = [
   'CONDITION_APPEAL',
   'BRIEFING',
 ]
+
+export function isVideoCategory(value: unknown): value is VideoCategory {
+  return typeof value === 'string' && VIDEO_CATEGORIES.includes(value as VideoCategory)
+}

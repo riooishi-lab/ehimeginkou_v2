@@ -2,9 +2,15 @@
 
 import { prisma } from '@monorepo/database/client'
 import { revalidatePath } from 'next/cache'
+import { checkIsAdminOrSuperAdmin } from '../../../../../libs/auth/session'
 import { type ActionState, errorResult, parsePositiveInt, successResult } from '../../utils/actionResult'
 
 export async function deleteVideo(_prevState: ActionState, formData: FormData) {
+  const currentUser = await checkIsAdminOrSuperAdmin()
+  if (!currentUser) {
+    return errorResult('この操作を実行する権限がありません')
+  }
+
   const id = parsePositiveInt(formData.get('id'))
 
   if (!id) {

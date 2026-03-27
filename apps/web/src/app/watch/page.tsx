@@ -73,5 +73,5 @@ export default async function Page({ searchParams }: PageProps) {
 
   const watchedVideoIds = watchEvents.map((e) => e.videoId)
 
-  return <StudentPortal student={student} videos={videos} watchedVideoIds={watchedVideoIds} />
+  return <StudentPortal studentName={student.name} token={token} videos={videos} watchedVideoIds={watchedVideoIds} />
 }

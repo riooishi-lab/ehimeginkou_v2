@@ -3,9 +3,15 @@
 import { randomBytes } from 'node:crypto'
 import { prisma } from '@monorepo/database/client'
 import { revalidatePath } from 'next/cache'
+import { checkIsAdminOrSuperAdmin } from '../../../../../libs/auth/session'
 import { type ActionState, errorResult, successResult } from '../../utils/actionResult'
 
 export async function createStudent(_prevState: ActionState, formData: FormData) {
+  const currentUser = await checkIsAdminOrSuperAdmin()
+  if (!currentUser) {
+    return errorResult('この操作を実行する権限がありません')
+  }
+
   const name = formData.get('name') as string | null
   const email = formData.get('email') as string | null
   const phone = formData.get('phone') as string | null

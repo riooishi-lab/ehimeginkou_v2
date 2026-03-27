@@ -1,11 +1,11 @@
 .container {
   min-height: 100vh;
   background: #f8fafc;
-  font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
 }
 
 .header {
-  background: #0079B3;
+  background: #0079b3;
   color: white;
   padding: 2rem 1.5rem;
   text-align: center;
