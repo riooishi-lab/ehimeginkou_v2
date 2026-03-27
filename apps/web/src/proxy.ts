@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { SESSION_COOKIE_NAME } from './libs/auth/constants'
 
-const PUBLIC_PATHS = ['/auth', '/health', '/api/auth']
+const PUBLIC_PATHS = ['/auth', '/health', '/api/auth', '/watch', '/api/watch-event']
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname.startsWith(path))
