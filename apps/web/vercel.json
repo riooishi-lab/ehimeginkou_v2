@@ -1,5 +1,5 @@
 {
   "framework": "nextjs",
   "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "cd ../.. && pnpm build"
+  "buildCommand": "cd ../.. && pnpm --filter database db:generate && pnpm --filter web build"
 }
