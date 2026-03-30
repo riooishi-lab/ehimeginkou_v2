@@ -16,11 +16,16 @@ export default async function AuthenticatedLayout({
     redirect('/auth/signin')
   }
 
-  const user = await prisma.visibleUser.findFirst({
-    where: { authProviderId: session.uid },
-  })
+  try {
+    const user = await prisma.visibleUser.findUnique({
+      where: { authProviderId: session.uid },
+      select: { id: true },
+    })
 
-  if (!user) {
+    if (!user) {
+      redirect('/auth/signin')
+    }
+  } catch {
     redirect('/auth/signin')
   }
 

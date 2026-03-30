@@ -333,9 +333,9 @@ export default async function Page({ searchParams }: Props) {
           COUNT(CASE WHEN event_type = 'HEARTBEAT' THEN 1 END) AS heartbeats
         FROM sub.watch_events
       `,
-      tabIndex === 0 ? fetchPersonData() : Promise.resolve(null),
-      tabIndex === 1 ? fetchTimeData() : Promise.resolve(null),
-      tabIndex === 2 ? fetchVideoData() : Promise.resolve(null),
+      tabIndex === 0 ? fetchPersonData().catch(() => null) : Promise.resolve(null),
+      tabIndex === 1 ? fetchTimeData().catch(() => null) : Promise.resolve(null),
+      tabIndex === 2 ? fetchVideoData().catch(() => null) : Promise.resolve(null),
     ])
 
     const summary = summaryRows[0] ?? { unique_viewers: 0n, total_views: 0n, heartbeats: 0n }
