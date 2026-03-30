@@ -9,7 +9,7 @@ import { Typography } from '../../../../../components/common/Typography'
 import { VIDEO_CATEGORY_LABELS } from '../../videos/constants'
 import { BarChart } from './BarChart'
 import { StatCard } from './StatCard'
-import { formatPercent, formatTime } from './utils'
+import { formatDate, formatPercent, formatTime } from './utils'
 import styles from './VideoTab.module.css'
 
 type VideoStat = {
@@ -30,9 +30,21 @@ type CategoryStat = {
   watchTimeSec: number
 }
 
+type VideoViewerStat = {
+  videoId: number
+  videoTitle: string
+  studentName: string
+  views: number
+  watchTimeSec: number
+  lastWatch: Date | null
+}
+
+type VideoViewerRow = VideoViewerStat & { rowKey: string }
+
 type Props = {
   videos: VideoStat[]
   categories: CategoryStat[]
+  videoViewers: VideoViewerStat[]
 }
 
 function VideoTitleCell({ row }: { row: VideoStat }): ReactNode {
@@ -81,7 +93,43 @@ const videoColumns: CellProps<VideoStat>[] = [
   { label: '視聴時間', Component: VideoWatchTimeCell },
 ]
 
-export function VideoTab({ videos, categories }: Props) {
+function VvVideoTitleCell({ row }: { row: VideoViewerRow }): ReactNode {
+  return (
+    <Typography size='sm' weight='semibold' truncate>
+      {row.videoTitle}
+    </Typography>
+  )
+}
+
+function VvStudentCell({ row }: { row: VideoViewerRow }): ReactNode {
+  return <Typography size='sm'>{row.studentName}</Typography>
+}
+
+function VvViewsCell({ row }: { row: VideoViewerRow }): ReactNode {
+  return <Typography size='sm'>{row.views}回</Typography>
+}
+
+function VvWatchTimeCell({ row }: { row: VideoViewerRow }): ReactNode {
+  return <Typography size='sm'>{formatTime(row.watchTimeSec)}</Typography>
+}
+
+function VvLastWatchCell({ row }: { row: VideoViewerRow }): ReactNode {
+  return (
+    <Typography size='sm' color='var(--text-secondary, #606060)'>
+      {formatDate(row.lastWatch)}
+    </Typography>
+  )
+}
+
+const videoViewerColumns: CellProps<VideoViewerRow>[] = [
+  { label: '動画', Component: VvVideoTitleCell },
+  { label: '学生', Component: VvStudentCell },
+  { label: '再生回数', Component: VvViewsCell },
+  { label: '視聴時間', Component: VvWatchTimeCell },
+  { label: '最終視聴', Component: VvLastWatchCell },
+]
+
+export function VideoTab({ videos, categories, videoViewers }: Props) {
   const sortedByViews = [...videos].sort((a, b) => b.views - a.views)
   const sortedByTime = [...videos].sort((a, b) => b.watchTimeSec - a.watchTimeSec)
   const mostViewed = sortedByViews[0]?.title ?? '-'
@@ -90,6 +138,11 @@ export function VideoTab({ videos, categories }: Props) {
   const totalViews = videos.reduce((sum, v) => sum + v.views, 0)
   const totalCompletions = videos.reduce((sum, v) => sum + v.completions, 0)
   const avgCompletionRate = formatPercent(totalViews, totalCompletions)
+
+  const viewerRows: VideoViewerRow[] = videoViewers.map((vv) => ({
+    ...vv,
+    rowKey: `${vv.videoId}-${vv.studentName}`,
+  }))
 
   const categoryBarItems = [...categories]
     .sort((a, b) => b.views - a.views)
@@ -121,6 +174,13 @@ export function VideoTab({ videos, categories }: Props) {
           動画別パフォーマンス
         </Typography>
         <Table rows={sortedByViews} uniqueKey='id' columns={videoColumns} noRowsMessage='データがありません' />
+      </FlexBox>
+
+      <FlexBox flexDirection='column' gap='0.75rem'>
+        <Typography size='lg' weight='semibold'>
+          動画別 視聴者詳細
+        </Typography>
+        <Table rows={viewerRows} uniqueKey='rowKey' columns={videoViewerColumns} noRowsMessage='データがありません' />
       </FlexBox>
     </FlexBox>
   )

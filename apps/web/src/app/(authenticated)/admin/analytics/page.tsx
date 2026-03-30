@@ -67,12 +67,37 @@ type CategoryStatRow = {
   heartbeats: bigint
 }
 
+type StudentVideoStatRow = {
+  student_id: number
+  video_title: string
+  video_category: VideoCategory
+  views: bigint
+  completions: bigint
+  heartbeats: bigint
+}
+
+type ActivityLogRow = {
+  created_at: Date
+  student_name: string
+  video_title: string
+  event_type: string
+}
+
+type VideoViewerStatRow = {
+  video_id: number
+  video_title: string
+  student_name: string
+  views: bigint
+  heartbeats: bigint
+  last_watch: Date | null
+}
+
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 async function fetchPersonData() {
-  const [studentRows, universityRows] = await Promise.all([
+  const [studentRows, universityRows, studentVideoRows] = await Promise.all([
     prisma.$queryRaw<StudentStatRow[]>`
       SELECT
         s.id AS student_id,
@@ -100,6 +125,19 @@ async function fetchPersonData() {
       GROUP BY COALESCE(s.university, '未設定')
       ORDER BY heartbeats DESC
     `,
+    prisma.$queryRaw<StudentVideoStatRow[]>`
+      SELECT
+        we.student_id,
+        v.title AS video_title,
+        v.category AS video_category,
+        COUNT(CASE WHEN we.event_type = 'PLAY' THEN 1 END) AS views,
+        COUNT(CASE WHEN we.event_type = 'ENDED' THEN 1 END) AS completions,
+        COUNT(CASE WHEN we.event_type = 'HEARTBEAT' THEN 1 END) AS heartbeats
+      FROM sub.watch_events we
+      JOIN sub.visible_videos v ON v.id = we.video_id
+      GROUP BY we.student_id, v.title, v.category
+      ORDER BY we.student_id, heartbeats DESC
+    `,
   ])
 
   return {
@@ -120,11 +158,19 @@ async function fetchPersonData() {
       totalViews: Number(r.total_views),
       watchTimeSec: Number(r.heartbeats) * 30,
     })),
+    studentVideos: studentVideoRows.map((r) => ({
+      studentId: Number(r.student_id),
+      videoTitle: r.video_title,
+      videoCategory: r.video_category,
+      views: Number(r.views),
+      completions: Number(r.completions),
+      watchTimeSec: Number(r.heartbeats) * 30,
+    })),
   }
 }
 
 async function fetchTimeData() {
-  const [dailyRows, hourlyRows, dowRows] = await Promise.all([
+  const [dailyRows, hourlyRows, dowRows, activityRows] = await Promise.all([
     prisma.$queryRaw<DailyStatRow[]>`
       SELECT
         d.day::date AS day,
@@ -160,6 +206,19 @@ async function fetchTimeData() {
       GROUP BY EXTRACT(DOW FROM created_at)
       ORDER BY dow ASC
     `,
+    prisma.$queryRaw<ActivityLogRow[]>`
+      SELECT
+        we.created_at,
+        s.name AS student_name,
+        v.title AS video_title,
+        we.event_type
+      FROM sub.watch_events we
+      JOIN sub.visible_students s ON s.id = we.student_id
+      JOIN sub.visible_videos v ON v.id = we.video_id
+      WHERE we.event_type IN ('PLAY', 'ENDED')
+      ORDER BY we.created_at DESC
+      LIMIT 50
+    `,
   ])
 
   return {
@@ -179,11 +238,17 @@ async function fetchTimeData() {
       totalViews: Number(r.total_views),
       watchTimeSec: Number(r.heartbeats) * 30,
     })),
+    recentActivity: activityRows.map((r) => ({
+      createdAt: r.created_at,
+      studentName: r.student_name,
+      videoTitle: r.video_title,
+      eventType: r.event_type,
+    })),
   }
 }
 
 async function fetchVideoData() {
-  const [videoRows, categoryRows] = await Promise.all([
+  const [videoRows, categoryRows, videoViewerRows] = await Promise.all([
     prisma.$queryRaw<VideoStatRow[]>`
       SELECT
         v.id AS video_id,
@@ -210,6 +275,20 @@ async function fetchVideoData() {
       GROUP BY v.category
       ORDER BY views DESC
     `,
+    prisma.$queryRaw<VideoViewerStatRow[]>`
+      SELECT
+        v.id AS video_id,
+        v.title AS video_title,
+        s.name AS student_name,
+        COUNT(CASE WHEN we.event_type = 'PLAY' THEN 1 END) AS views,
+        COUNT(CASE WHEN we.event_type = 'HEARTBEAT' THEN 1 END) AS heartbeats,
+        MAX(CASE WHEN we.event_type = 'PLAY' THEN we.created_at END) AS last_watch
+      FROM sub.watch_events we
+      JOIN sub.visible_students s ON s.id = we.student_id
+      JOIN sub.visible_videos v ON v.id = we.video_id
+      GROUP BY v.id, v.title, s.name
+      ORDER BY v.id, heartbeats DESC
+    `,
   ])
 
   return {
@@ -228,6 +307,14 @@ async function fetchVideoData() {
       viewers: Number(r.viewers),
       views: Number(r.views),
       watchTimeSec: Number(r.heartbeats) * 30,
+    })),
+    videoViewers: videoViewerRows.map((r) => ({
+      videoId: Number(r.video_id),
+      videoTitle: r.video_title,
+      studentName: r.student_name,
+      views: Number(r.views),
+      watchTimeSec: Number(r.heartbeats) * 30,
+      lastWatch: r.last_watch,
     })),
   }
 }

@@ -1,10 +1,12 @@
 'use client'
 
+import type { VideoCategory } from '@monorepo/database'
 import type { ReactNode } from 'react'
 import { FlexBox } from '../../../../../components/common/FlexBox'
 import { Table } from '../../../../../components/common/Table'
 import type { CellProps } from '../../../../../components/common/Table/Table.types'
 import { Typography } from '../../../../../components/common/Typography'
+import { VIDEO_CATEGORY_LABELS } from '../../videos/constants'
 import { BarChart } from './BarChart'
 import styles from './PersonTab.module.css'
 import { StatCard } from './StatCard'
@@ -29,9 +31,21 @@ type UniversityStat = {
   watchTimeSec: number
 }
 
+type StudentVideoStat = {
+  studentId: number
+  videoTitle: string
+  videoCategory: VideoCategory
+  views: number
+  completions: number
+  watchTimeSec: number
+}
+
+type StudentVideoRow = StudentVideoStat & { studentName: string; rowKey: string }
+
 type Props = {
   students: StudentStat[]
   universities: UniversityStat[]
+  studentVideos: StudentVideoStat[]
   totalStudents: number
 }
 
@@ -83,13 +97,60 @@ const studentColumns: CellProps<StudentStat>[] = [
   { label: '最終視聴', Component: StudentLastWatchCell },
 ]
 
-export function PersonTab({ students, universities, totalStudents }: Props) {
+function SvStudentNameCell({ row }: { row: StudentVideoRow }): ReactNode {
+  return (
+    <Typography size='sm' weight='semibold'>
+      {row.studentName}
+    </Typography>
+  )
+}
+
+function SvVideoCell({ row }: { row: StudentVideoRow }): ReactNode {
+  return (
+    <FlexBox flexDirection='column' gap='0.125rem'>
+      <Typography size='sm'>{row.videoTitle}</Typography>
+      <Typography size='xs' color='var(--text-secondary, #606060)'>
+        {VIDEO_CATEGORY_LABELS[row.videoCategory]}
+      </Typography>
+    </FlexBox>
+  )
+}
+
+function SvViewsCell({ row }: { row: StudentVideoRow }): ReactNode {
+  return <Typography size='sm'>{row.views}回</Typography>
+}
+
+function SvCompletionsCell({ row }: { row: StudentVideoRow }): ReactNode {
+  return <Typography size='sm'>{row.completions}回</Typography>
+}
+
+function SvWatchTimeCell({ row }: { row: StudentVideoRow }): ReactNode {
+  return <Typography size='sm'>{formatTime(row.watchTimeSec)}</Typography>
+}
+
+const studentVideoColumns: CellProps<StudentVideoRow>[] = [
+  { label: '学生名', Component: SvStudentNameCell },
+  { label: '動画', Component: SvVideoCell },
+  { label: '再生回数', Component: SvViewsCell },
+  { label: '完走数', Component: SvCompletionsCell },
+  { label: '視聴時間', Component: SvWatchTimeCell },
+]
+
+export function PersonTab({ students, universities, studentVideos, totalStudents }: Props) {
   const viewerCount = students.filter((s) => s.totalViews > 0).length
   const nonViewerCount = totalStudents - viewerCount
   const avgVideos =
     viewerCount > 0 ? (students.reduce((sum, s) => sum + s.videosWatched, 0) / viewerCount).toFixed(1) : '0'
   const avgTimeSec =
     viewerCount > 0 ? Math.round(students.reduce((sum, s) => sum + s.watchTimeSec, 0) / viewerCount) : 0
+
+  const studentNameMap = new Map(students.map((s) => [s.id, s.name]))
+
+  const studentVideoRows: StudentVideoRow[] = studentVideos.map((sv) => ({
+    ...sv,
+    studentName: studentNameMap.get(sv.studentId) ?? `ID:${sv.studentId}`,
+    rowKey: `${sv.studentId}-${sv.videoTitle}`,
+  }))
 
   const universityBarItems = [...universities]
     .sort((a, b) => b.watchTimeSec - a.watchTimeSec)
@@ -121,6 +182,18 @@ export function PersonTab({ students, universities, totalStudents }: Props) {
           学生別アクティビティ
         </Typography>
         <Table rows={students} uniqueKey='id' columns={studentColumns} noRowsMessage='データがありません' />
+      </FlexBox>
+
+      <FlexBox flexDirection='column' gap='0.75rem'>
+        <Typography size='lg' weight='semibold'>
+          学生別 視聴動画内訳
+        </Typography>
+        <Table
+          rows={studentVideoRows}
+          uniqueKey='rowKey'
+          columns={studentVideoColumns}
+          noRowsMessage='データがありません'
+        />
       </FlexBox>
     </FlexBox>
   )
