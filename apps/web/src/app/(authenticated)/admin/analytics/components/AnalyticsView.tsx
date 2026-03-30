@@ -29,6 +29,14 @@ type PersonTabData = {
     totalViews: number
     watchTimeSec: number
   }[]
+  studentVideos: {
+    studentId: number
+    videoTitle: string
+    videoCategory: VideoCategory
+    views: number
+    completions: number
+    watchTimeSec: number
+  }[]
 }
 
 type TimeTabData = {
@@ -48,6 +56,12 @@ type TimeTabData = {
     totalViews: number
     watchTimeSec: number
   }[]
+  recentActivity: {
+    createdAt: Date
+    studentName: string
+    videoTitle: string
+    eventType: string
+  }[]
 }
 
 type VideoTabData = {
@@ -66,6 +80,14 @@ type VideoTabData = {
     viewers: number
     views: number
     watchTimeSec: number
+  }[]
+  videoViewers: {
+    videoId: number
+    videoTitle: string
+    studentName: string
+    views: number
+    watchTimeSec: number
+    lastWatch: Date | null
   }[]
 }
 
@@ -101,6 +123,7 @@ export function AnalyticsView({
           <PersonTab
             students={personData.students}
             universities={personData.universities}
+            studentVideos={personData.studentVideos}
             totalStudents={totalStudents}
           />
         ) : null,
@@ -109,13 +132,20 @@ export function AnalyticsView({
         id: 'time',
         label: '時間軸',
         content: timeData ? (
-          <TimeTab daily={timeData.daily} hourly={timeData.hourly} dayOfWeek={timeData.dayOfWeek} />
+          <TimeTab
+            daily={timeData.daily}
+            hourly={timeData.hourly}
+            dayOfWeek={timeData.dayOfWeek}
+            recentActivity={timeData.recentActivity}
+          />
         ) : null,
       },
       {
         id: 'video',
         label: '動画軸',
-        content: videoData ? <VideoTab videos={videoData.videos} categories={videoData.categories} /> : null,
+        content: videoData ? (
+          <VideoTab videos={videoData.videos} categories={videoData.categories} videoViewers={videoData.videoViewers} />
+        ) : null,
       },
     ],
     [personData, timeData, videoData, totalStudents],

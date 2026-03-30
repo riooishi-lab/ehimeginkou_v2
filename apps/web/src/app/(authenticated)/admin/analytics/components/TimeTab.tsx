@@ -1,6 +1,9 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { FlexBox } from '../../../../../components/common/FlexBox'
+import { Table } from '../../../../../components/common/Table'
+import type { CellProps } from '../../../../../components/common/Table/Table.types'
 import { Typography } from '../../../../../components/common/Typography'
 import { DailyChart } from './DailyChart'
 import { HourHeatmap } from './HourHeatmap'
@@ -27,15 +30,66 @@ type DayOfWeekStat = {
   watchTimeSec: number
 }
 
+type ActivityLog = {
+  createdAt: Date
+  studentName: string
+  videoTitle: string
+  eventType: string
+}
+
+type ActivityLogRow = ActivityLog & { rowKey: string }
+
 type Props = {
   daily: DailyStat[]
   hourly: HourlyStat[]
   dayOfWeek: DayOfWeekStat[]
+  recentActivity: ActivityLog[]
 }
 
 const DOW_LABELS = ['日', '月', '火', '水', '木', '金', '土']
 
-export function TimeTab({ daily, hourly, dayOfWeek }: Props) {
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  PLAY: '再生',
+  ENDED: '完走',
+}
+
+function formatDateTime(date: Date): string {
+  const d = new Date(date)
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function ActivityDateCell({ row }: { row: ActivityLogRow }): ReactNode {
+  return (
+    <Typography size='sm' color='var(--text-secondary, #606060)'>
+      {formatDateTime(row.createdAt)}
+    </Typography>
+  )
+}
+
+function ActivityStudentCell({ row }: { row: ActivityLogRow }): ReactNode {
+  return <Typography size='sm'>{row.studentName}</Typography>
+}
+
+function ActivityVideoCell({ row }: { row: ActivityLogRow }): ReactNode {
+  return (
+    <Typography size='sm' truncate>
+      {row.videoTitle}
+    </Typography>
+  )
+}
+
+function ActivityActionCell({ row }: { row: ActivityLogRow }): ReactNode {
+  return <Typography size='sm'>{EVENT_TYPE_LABELS[row.eventType] ?? row.eventType}</Typography>
+}
+
+const activityColumns: CellProps<ActivityLogRow>[] = [
+  { label: '日時', Component: ActivityDateCell },
+  { label: '学生', Component: ActivityStudentCell },
+  { label: '動画', Component: ActivityVideoCell },
+  { label: 'アクション', Component: ActivityActionCell },
+]
+
+export function TimeTab({ daily, hourly, dayOfWeek, recentActivity }: Props) {
   const todayStr = new Date().toDateString()
   const todayStat = daily.find((d) => new Date(d.day).toDateString() === todayStr)
   const todayViews = todayStat?.totalViews ?? 0
@@ -66,6 +120,11 @@ export function TimeTab({ daily, hourly, dayOfWeek }: Props) {
     const found = dayOfWeek.find((d) => d.dow === i)
     return { dow: i, totalViews: found?.totalViews ?? 0, watchTimeSec: found?.watchTimeSec ?? 0 }
   })
+
+  const activityRows: ActivityLogRow[] = recentActivity.map((a, i) => ({
+    ...a,
+    rowKey: `${new Date(a.createdAt).getTime()}-${i}`,
+  }))
 
   return (
     <FlexBox flexDirection='column' gap='1.5rem'>
@@ -107,6 +166,13 @@ export function TimeTab({ daily, hourly, dayOfWeek }: Props) {
             </div>
           ))}
         </div>
+      </FlexBox>
+
+      <FlexBox flexDirection='column' gap='0.75rem'>
+        <Typography size='lg' weight='semibold'>
+          最近のアクティビティ
+        </Typography>
+        <Table rows={activityRows} uniqueKey='rowKey' columns={activityColumns} noRowsMessage='データがありません' />
       </FlexBox>
     </FlexBox>
   )
