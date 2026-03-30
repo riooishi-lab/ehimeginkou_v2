@@ -23,17 +23,14 @@ export async function getSession() {
   }
 
   try {
-    const { exp } = jwtDecode(sessionCookie)
-    if (exp && exp * 1000 < Date.now()) {
+    const decoded = jwtDecode<{ sub?: string; email?: string; exp?: number }>(sessionCookie)
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
       return null
     }
-
-    const adminAuth = await getAdminAuth()
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
-    return {
-      uid: decodedClaims.uid,
-      email: decodedClaims.email,
+    if (!decoded.sub) {
+      return null
     }
+    return { uid: decoded.sub, email: decoded.email ?? '' }
   } catch {
     return null
   }
