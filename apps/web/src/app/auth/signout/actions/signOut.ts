@@ -7,7 +7,11 @@ export async function signOut() {
   const session = await getSession()
 
   if (session) {
-    await revokeUserSessions(session.uid)
+    try {
+      await revokeUserSessions(session.uid)
+    } catch {
+      // Firebase Admin SDK failure should not block sign-out
+    }
   }
 
   await clearSessionCookie()
