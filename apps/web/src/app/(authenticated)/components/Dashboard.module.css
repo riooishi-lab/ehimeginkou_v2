@@ -1,33 +1,38 @@
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
 }
 
 .statCard {
-  background: white;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--border-subtle, #efefef);
+  border-radius: 12px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
+  transition: box-shadow 0.15s ease;
+}
+
+.statCard:hover {
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
 }
 
 .sectionGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 16px;
 }
 
 .section {
-  background: white;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--border-subtle, #efefef);
+  border-radius: 12px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .sectionHeader {
@@ -39,27 +44,27 @@
 .navGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: 12px;
 }
 
 .navCard {
-  background: white;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--border-subtle, #efefef);
+  border-radius: 12px;
+  padding: 20px;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 14px;
   text-decoration: none;
   color: inherit;
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .navCard:hover {
-  border-color: var(--color-primary, #2563eb);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-color: var(--border-strong, #d4d4d4);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
 }
 
 .navIcon {
@@ -68,7 +73,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
-  background: var(--color-surface, #f3f4f6);
+  border-radius: 10px;
+  background: var(--surface-sunken, #f5f5f5);
   flex-shrink: 0;
 }

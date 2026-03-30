@@ -6,7 +6,3 @@ export type NavItem = {
   href: string
   icon: IconType
 }
-
-export type NavBarProps = {
-  className?: string
-}
