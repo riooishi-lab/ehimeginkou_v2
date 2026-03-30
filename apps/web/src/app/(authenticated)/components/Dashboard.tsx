@@ -158,7 +158,7 @@ export function Dashboard({
               最近の動画
             </Typography>
             <Link href={PAGE_PATH.ADMIN_VIDEOS}>
-              <Typography size='xs' color='var(--color-primary, #2563eb)'>
+              <Typography size='xs' color='#1e3a5f'>
                 すべて表示 →
               </Typography>
             </Link>
@@ -179,7 +179,7 @@ export function Dashboard({
               最近の学生
             </Typography>
             <Link href={PAGE_PATH.ADMIN_STUDENTS}>
-              <Typography size='xs' color='var(--color-primary, #2563eb)'>
+              <Typography size='xs' color='#1e3a5f'>
                 すべて表示 →
               </Typography>
             </Link>
