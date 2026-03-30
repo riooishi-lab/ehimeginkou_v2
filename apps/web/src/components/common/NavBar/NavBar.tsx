@@ -5,12 +5,14 @@ import { NavLink } from './components/NavLink'
 import { SignOutButton } from './components/SignOutButton'
 import { NAV_ITEMS } from './NavBar.constants'
 import styles from './NavBar.module.css'
-import type { NavBarProps } from './NavBar.types'
 
-export function NavBar({ className }: Readonly<NavBarProps>) {
+export function NavBar() {
   return (
-    <nav className={`${styles.navbar} ${className ?? ''}`}>
-      <div className={styles.logo}>C</div>
+    <aside className={styles.sidebar}>
+      <div className={styles.logoArea}>
+        <div className={styles.logo}>R</div>
+        <span className={styles.logoText}>採用動画管理</span>
+      </div>
 
       <div className={styles.navItems}>
         {NAV_ITEMS.map((item) => (
@@ -22,11 +24,12 @@ export function NavBar({ className }: Readonly<NavBarProps>) {
       </div>
 
       <div className={styles.actions}>
-        <Link href={PAGE_PATH.ADMIN_SETTINGS} className={styles.actionButton}>
-          <LuSettings className={styles.actionButtonIcon} />
+        <Link href={PAGE_PATH.ADMIN_SETTINGS} className={styles.actionLink}>
+          <LuSettings className={styles.actionLinkIcon} />
+          設定
         </Link>
         <SignOutButton />
       </div>
-    </nav>
+    </aside>
   )
 }

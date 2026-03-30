@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { NavBar } from '../../components/common/NavBar'
 import { getSession } from '../../libs/auth/session'
+import styles from './layout.module.css'
 
 export default async function AuthenticatedLayout({
   children,
@@ -24,9 +25,9 @@ export default async function AuthenticatedLayout({
   }
 
   return (
-    <div>
+    <div className={styles.layout}>
       <NavBar />
-      <main>{children}</main>
+      <main className={styles.content}>{children}</main>
     </div>
   )
 }

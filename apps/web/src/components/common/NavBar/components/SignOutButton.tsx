@@ -7,8 +7,9 @@ import styles from '../NavBar.module.css'
 export function SignOutButton() {
   return (
     <form action={signOut}>
-      <button type='submit' className={styles.actionButton}>
-        <LuLogOut className={styles.actionButtonIcon} />
+      <button type='submit' className={styles.actionLink}>
+        <LuLogOut className={styles.actionLinkIcon} />
+        サインアウト
       </button>
     </form>
   )
