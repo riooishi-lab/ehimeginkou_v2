@@ -9,7 +9,7 @@ export function SignOutButton() {
     <form action={signOut}>
       <button type='submit' className={styles.actionLink}>
         <LuLogOut className={styles.actionLinkIcon} />
-        サインアウト
+        <span className={styles.actionLinkLabel}>サインアウト</span>
       </button>
     </form>
   )

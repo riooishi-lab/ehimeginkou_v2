@@ -83,6 +83,10 @@
   flex-shrink: 0;
 }
 
+.navItemLabel {
+  display: inline;
+}
+
 .spacer {
   flex: 1;
 }
@@ -126,4 +130,64 @@
 .actionLinkIcon {
   font-size: 18px;
   flex-shrink: 0;
+}
+
+.actionLinkLabel {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 4px 0;
+    gap: 0;
+    border-right: none;
+    border-top: 1px solid var(--border-subtle, #efefef);
+    background-color: #fff;
+    z-index: 200;
+  }
+
+  .logoArea {
+    display: none;
+  }
+
+  .navItems {
+    flex-direction: row;
+    flex: none;
+    gap: 0;
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .navItem {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+  }
+
+  .navItemIcon {
+    font-size: 22px;
+  }
+
+  .navItemLabel {
+    display: none;
+  }
+
+  .actions {
+    display: none;
+  }
 }
