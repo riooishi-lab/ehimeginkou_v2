@@ -12,6 +12,7 @@ export async function exchangeCustomTokenForIdToken(uid: string): Promise<string
     },
   )
 
+  if (!response.ok) return null
   const data = (await response.json()) as { idToken?: string }
   return data.idToken ?? null
 }

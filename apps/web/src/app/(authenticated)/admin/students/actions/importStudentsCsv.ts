@@ -64,7 +64,9 @@ function resolveColumnIndices(headers: string[]): ColumnIndices {
 }
 
 function optionalField(fields: string[], idx: number): string | null {
-  return idx >= 0 ? fields[idx] || null : null
+  if (idx < 0) return null
+  const value = fields[idx]?.trim()
+  return value || null
 }
 
 function errorImportResult(errors: string[]): ImportResult {
@@ -72,8 +74,9 @@ function errorImportResult(errors: string[]): ImportResult {
 }
 
 async function upsertStudent(fields: string[], indices: ColumnIndices) {
-  const name = fields[indices.nameIdx]
-  const email = fields[indices.emailIdx]
+  const name = indices.nameIdx >= 0 ? fields[indices.nameIdx]?.trim() : undefined
+  const email = indices.emailIdx >= 0 ? fields[indices.emailIdx]?.trim() : undefined
+  if (!name || !email) throw new Error('名前またはメールアドレスが空です')
   const optionalData = {
     phone: optionalField(fields, indices.phoneIdx),
     university: optionalField(fields, indices.universityIdx),
