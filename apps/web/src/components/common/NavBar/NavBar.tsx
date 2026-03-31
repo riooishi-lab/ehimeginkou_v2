@@ -18,7 +18,7 @@ export function NavBar() {
         {NAV_ITEMS.map((item) => (
           <NavLink key={item.id} href={item.href}>
             <item.icon className={styles.navItemIcon} />
-            {item.label}
+            <span className={styles.navItemLabel}>{item.label}</span>
           </NavLink>
         ))}
       </div>
@@ -26,7 +26,7 @@ export function NavBar() {
       <div className={styles.actions}>
         <Link href={PAGE_PATH.ADMIN_SETTINGS} className={styles.actionLink}>
           <LuSettings className={styles.actionLinkIcon} />
-          設定
+          <span className={styles.actionLinkLabel}>設定</span>
         </Link>
         <SignOutButton />
       </div>

@@ -9,3 +9,10 @@
   background-color: var(--surface-page, #f9fafb);
   min-height: 100vh;
 }
+
+@media (max-width: 768px) {
+  .content {
+    margin-left: 0;
+    padding-bottom: 64px;
+  }
+}

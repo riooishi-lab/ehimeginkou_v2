@@ -3,7 +3,7 @@
 import type { VisibleStudent } from '@monorepo/database'
 import type { ReactNode } from 'react'
 import { useCallback, useMemo, useState } from 'react'
-import { FiPlus, FiTrash2, FiUpload } from 'react-icons/fi'
+import { FiPlus, FiRefreshCw, FiTrash2, FiUpload } from 'react-icons/fi'
 import { Button } from '../../../../../components/common/Button'
 import { FlexBox } from '../../../../../components/common/FlexBox'
 import { Table } from '../../../../../components/common/Table'
@@ -12,7 +12,10 @@ import { Toast, useToast } from '../../../../../components/common/Toast'
 import { Typography } from '../../../../../components/common/Typography'
 import { AddStudentModal } from './AddStudentModal'
 import { DeleteStudentModal } from './DeleteStudentModal'
+import { ExportCsvButton } from './ExportCsvButton'
 import { ImportCsvModal } from './ImportCsvModal'
+import { RenewTokenModal } from './RenewTokenModal'
+import { StudentSearchFilter } from './StudentSearchFilter'
 
 type Props = {
   students: VisibleStudent[]
@@ -52,22 +55,44 @@ function TokenCell({ row }: { row: VisibleStudent }): ReactNode {
   )
 }
 
-function createDeleteCell(onDelete: (student: VisibleStudent) => void) {
-  return function DeleteCell({ row }: { row: VisibleStudent }): ReactNode {
+type ActionHandlers = {
+  onRenew: (student: VisibleStudent) => void
+  onDelete: (student: VisibleStudent) => void
+}
+
+function createActionCell({ onRenew, onDelete }: ActionHandlers) {
+  return function ActionCell({ row }: { row: VisibleStudent }): ReactNode {
     return (
-      <button
-        type='button'
-        onClick={() => onDelete(row)}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '4px',
-          color: 'var(--color-danger, #dc2626)',
-        }}
-      >
-        <FiTrash2 size={16} />
-      </button>
+      <FlexBox gap='0.25rem' justifyContent='flex-start'>
+        <button
+          type='button'
+          onClick={() => onRenew(row)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '4px',
+            color: 'var(--color-primary, #2563eb)',
+          }}
+          title='トークン更新'
+        >
+          <FiRefreshCw size={16} />
+        </button>
+        <button
+          type='button'
+          onClick={() => onDelete(row)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '4px',
+            color: 'var(--color-danger, #dc2626)',
+          }}
+          title='削除'
+        >
+          <FiTrash2 size={16} />
+        </button>
+      </FlexBox>
     )
   }
 }
@@ -76,9 +101,23 @@ export function StudentList({ students }: Props) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [deletingStudent, setDeletingStudent] = useState<VisibleStudent | null>(null)
+  const [renewingStudent, setRenewingStudent] = useState<VisibleStudent | null>(null)
+  const [search, setSearch] = useState('')
   const { showToast, toastProps } = useToast()
 
   const handleDelete = useCallback((student: VisibleStudent) => setDeletingStudent(student), [])
+  const handleRenew = useCallback((student: VisibleStudent) => setRenewingStudent(student), [])
+
+  const filteredStudents = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return students
+    return students.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.email.toLowerCase().includes(q) ||
+        (s.university ?? '').toLowerCase().includes(q),
+    )
+  }, [students, search])
 
   const columns: CellProps<VisibleStudent>[] = useMemo(
     () => [
@@ -86,9 +125,9 @@ export function StudentList({ students }: Props) {
       { label: 'メール', Component: EmailCell },
       { label: '大学・学部', Component: UniversityCell },
       { label: 'トークン有効期限', Component: TokenCell },
-      { label: '', Component: createDeleteCell(handleDelete) },
+      { label: '', Component: createActionCell({ onRenew: handleRenew, onDelete: handleDelete }) },
     ],
-    [handleDelete],
+    [handleDelete, handleRenew],
   )
 
   return (
@@ -96,9 +135,10 @@ export function StudentList({ students }: Props) {
       <FlexBox flexDirection='column' gap='1rem' padding='1.5rem'>
         <FlexBox justifyContent='space-between' alignItems='center'>
           <Typography size='lg' weight='semibold'>
-            学生一覧（{students.length}件）
+            学生一覧（{filteredStudents.length}件）
           </Typography>
           <FlexBox gap='0.5rem'>
+            <ExportCsvButton onError={(msg) => showToast(msg, 'error')} />
             <Button size='md' theme='secondary' variant='outline' onClick={() => setShowImportModal(true)}>
               <FiUpload size={16} style={{ marginRight: '4px' }} />
               CSV取り込み
@@ -110,7 +150,9 @@ export function StudentList({ students }: Props) {
           </FlexBox>
         </FlexBox>
 
-        <Table rows={students} uniqueKey='id' noRowsMessage='学生はまだ登録されていません' columns={columns} />
+        <StudentSearchFilter search={search} onSearchChange={setSearch} />
+
+        <Table rows={filteredStudents} uniqueKey='id' noRowsMessage='学生はまだ登録されていません' columns={columns} />
       </FlexBox>
 
       {showAddModal && (
@@ -134,6 +176,18 @@ export function StudentList({ students }: Props) {
           onSuccess={() => {
             setDeletingStudent(null)
             showToast('学生を削除しました', 'success')
+          }}
+        />
+      )}
+
+      {renewingStudent && (
+        <RenewTokenModal
+          student={renewingStudent}
+          open={!!renewingStudent}
+          onClose={() => setRenewingStudent(null)}
+          onSuccess={() => {
+            setRenewingStudent(null)
+            showToast('トークンを更新しました', 'success')
           }}
         />
       )}

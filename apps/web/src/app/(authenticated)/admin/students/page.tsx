@@ -1,11 +1,31 @@
 import { prisma } from '@monorepo/database/client'
 import { FiUsers } from 'react-icons/fi'
 import { PageHeader } from '../../../../components/common/PageHeader'
+import { searchParamsCache } from '../../../../utils/searchParams'
 import { StudentList } from './components/StudentList'
 
-export default async function Page() {
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function Page({ searchParams }: Props) {
+  const { search, page, pageSize } = await searchParamsCache.parse(searchParams)
+
+  const whereClause = search
+    ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { email: { contains: search, mode: 'insensitive' as const } },
+          { university: { contains: search, mode: 'insensitive' as const } },
+        ],
+      }
+    : {}
+
   const students = await prisma.visibleStudent.findMany({
+    where: whereClause,
     orderBy: { createdAt: 'desc' },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   })
 
   return (
