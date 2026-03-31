@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   const authType = cookieStore.get(COOKIE_AUTH_TYPE)?.value
   const invitationToken = cookieStore.get(COOKIE_INVITATION_TOKEN)?.value
 
-  if (searchParams.get('state') !== state) return redirect('/auth/signin?error=csrf')
+  if (!state || searchParams.get('state') !== state) return redirect('/auth/signin?error=csrf')
   if (searchParams.get('error')) return redirect('/auth/signin?error=oauth_error')
 
   const code = searchParams.get('code')

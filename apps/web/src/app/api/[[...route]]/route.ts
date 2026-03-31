@@ -14,7 +14,13 @@ export const runtime = 'nodejs'
 const app = new Hono<AppEnv>().basePath('/api')
 
 app.use('*', logger())
-app.use('*', cors())
+app.use(
+  '*',
+  cors({
+    origin: (origin) => origin,
+    credentials: true,
+  }),
+)
 app.use('*', secureHeaders())
 
 app.onError((err, c) => {
